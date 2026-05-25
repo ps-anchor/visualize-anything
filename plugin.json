@@ -1,0 +1,45 @@
+{
+  "name": "visualize-anything",
+  "version": "0.1.0",
+  "description": "Auto-generates a visual reel after Claude explains a concept, person, place, process, or analogy — for visual learners who'd rather see than read.",
+  "author": {
+    "name": "Pratik",
+    "url": "https://github.com/<your-handle>/visualize-anything"
+  },
+  "license": "MIT",
+  "keywords": ["visualization", "learning", "reel", "diagram", "visual-learner"],
+  "components": {
+    "hooks": ["hooks/"],
+    "skills": ["skills/"],
+    "commands": ["commands/"]
+  },
+  "config": {
+    "maxSlides": 10,
+    "outputDir": ".visualize-anything",
+    "autoOpenInBrowser": true,
+    "imageSource": {
+      "primary": "unsplash",
+      "fallback": "generated-svg",
+      "unsplashAccessKeyEnv": "UNSPLASH_ACCESS_KEY"
+    },
+    "decisionMode": "smart",
+    "askWhenUncertain": true,
+    "skipPatterns": [
+      "code-fix",
+      "one-line-answer",
+      "acknowledgment",
+      "simple-factual-lookup"
+    ],
+    "triggerCategories": [
+      "person",
+      "place",
+      "concept",
+      "process",
+      "system",
+      "analogy",
+      "comparison",
+      "historical-event",
+      "scientific-phenomenon"
+    ]
+  }
+}

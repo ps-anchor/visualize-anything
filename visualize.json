@@ -1,0 +1,17 @@
+{
+  "description": "After Claude finishes a response, decide whether a visual reel would help and generate one if so.",
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "prompt",
+            "timeout": 120,
+            "prompt": "You just finished a response. Decide whether to generate a visual reel for it.\n\nGENERATE a reel if the response explained any of: a person, place, concept, process, system, analogy, comparison, historical event, scientific phenomenon, or any topic with spatial / sequential / structural elements that a visual learner would benefit from seeing.\n\nSKIP (do nothing, return silently) if the response was:\n- a code fix or code diff\n- a one-line factual answer\n- an acknowledgment ('ok', 'got it', 'thanks')\n- pure conversational reply with no underlying concept\n- a request for clarification from the user\n\nIF UNCERTAIN: ask the user exactly this and wait for their reply before doing anything else:\n  'Would a visual reel help you here? (yes / no / always / never)'\n  - yes → generate this time\n  - no → skip this time\n  - always → generate this time AND remember the preference for the session\n  - never → skip this time AND remember the preference for the session\n\nIF GENERATING:\n1. Load the `visual-generation` skill from this plugin for guidance on slide content, image strategy, and the reel template.\n2. Produce at most 10 slides. Fewer is better — only include slides that add real understanding.\n3. Write the output to `${CLAUDE_PLUGIN_ROOT}/../.visualize-anything/reel-{ISO-timestamp}.html` using the template at `${CLAUDE_PLUGIN_ROOT}/templates/reel.html`.\n4. If `autoOpenInBrowser` is true in plugin config, open the file in the user's default browser using `open` (macOS), `xdg-open` (Linux), or `start` (Windows).\n5. Print a single line to the user: '📽  Reel ready: <path>  (N slides)'\n\nDO NOT narrate your decision-making out loud. Either generate silently and announce the reel, or skip silently."
+          }
+        ]
+      }
+    ]
+  }
+}

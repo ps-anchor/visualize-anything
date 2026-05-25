@@ -1,0 +1,13 @@
+{
+  "name": "visualize-anything-marketplace",
+  "owner": {
+    "name": "Pratik"
+  },
+  "plugins": [
+    {
+      "name": "visualize-anything",
+      "source": "./",
+      "description": "Auto-generates a visual reel for visual learners after relevant responses."
+    }
+  ]
+}
