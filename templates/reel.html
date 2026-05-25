@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Visual Reel</title>
+<style>
+  :root {
+    --bg: #0b0b0d;
+    --fg: #f7f7f5;
+    --accent: #ffd166;
+    --muted: rgba(247,247,245,0.65);
+    --shadow: 0 20px 60px rgba(0,0,0,0.45);
+    --radius: 18px;
+    --transition: 420ms cubic-bezier(.22,.61,.36,1);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased; overflow: hidden; height: 100%; }
+
+  #reel { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+
+  .slide {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity var(--transition), transform var(--transition);
+  }
+  .slide.active { opacity: 1; pointer-events: auto; }
+
+  .bg {
+    position: absolute; inset: -8% -4%;
+    background-size: cover; background-position: center;
+    will-change: transform; transform: translate3d(0,0,0) scale(1.08);
+    transition: transform var(--transition);
+    filter: brightness(0.55) saturate(1.05);
+  }
+  .slide.active .bg { transform: translate3d(0,0,0) scale(1); }
+
+  .fg {
+    position: relative; z-index: 2;
+    max-width: min(880px, 88vw);
+    padding: clamp(20px, 4vw, 48px);
+    text-align: left;
+  }
+  .accent {
+    display: inline-block;
+    font-size: clamp(12px, 1.4vw, 14px);
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+    padding: 4px 10px;
+    border: 1px solid rgba(255,209,102,0.45);
+    border-radius: 999px;
+  }
+  .text {
+    font-size: clamp(22px, 4.2vw, 42px);
+    line-height: 1.25; font-weight: 600;
+    text-shadow: 0 2px 18px rgba(0,0,0,0.55);
+  }
+  .typographic .text { font-size: clamp(28px, 6vw, 64px); font-weight: 700; }
+  .typographic { background: linear-gradient(135deg, #14141a, #1f1f2a); }
+
+  .svg-wrap {
+    position: relative; z-index: 2;
+    max-width: min(900px, 92vw); max-height: 70vh;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .svg-wrap svg { width: 100%; height: auto; max-height: 70vh; }
+
+  .caption-under-svg {
+    position: absolute; left: 0; right: 0; bottom: clamp(24px, 6vh, 56px);
+    text-align: center; padding: 0 24px; z-index: 3;
+    font-size: clamp(15px, 2vw, 20px); color: var(--muted);
+  }
+
+  /* Controls */
+  .controls {
+    position: absolute; z-index: 10;
+    left: 0; right: 0; bottom: 0;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px;
+    pointer-events: none;
+  }
+  .controls > * { pointer-events: auto; }
+  .dots { display: flex; gap: 6px; margin: 0 auto; }
+  .dot {
+    width: 6px; height: 6px; border-radius: 999px;
+    background: rgba(247,247,245,0.3);
+    transition: background var(--transition), width var(--transition);
+  }
+  .dot.active { background: var(--fg); width: 22px; }
+
+  .arrow, .replay {
+    background: rgba(20,20,26,0.55);
+    border: 1px solid rgba(247,247,245,0.18);
+    color: var(--fg);
+    width: 44px; height: 44px; border-radius: 999px;
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer; backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: transform 160ms ease, background 160ms ease;
+  }
+  .arrow:hover, .replay:hover { background: rgba(40,40,50,0.7); transform: scale(1.05); }
+  .arrow svg, .replay svg { width: 18px; height: 18px; }
+  .arrow[disabled] { opacity: 0.35; cursor: not-allowed; }
+
+  .replay-floating {
+    position: absolute; z-index: 11;
+    left: 50%; bottom: 84px; transform: translateX(-50%);
+    display: none; align-items: center; gap: 10px;
+    padding: 12px 20px; border-radius: 999px;
+    background: var(--accent); color: #1a1a22; border: none;
+    font-weight: 600; font-size: 15px; cursor: pointer;
+    box-shadow: var(--shadow);
+  }
+  .replay-floating.show { display: inline-flex; }
+
+  /* Mobile tap zones */
+  .tap-left, .tap-right {
+    position: absolute; top: 0; bottom: 80px; width: 33.33%;
+    z-index: 5; cursor: pointer;
+  }
+  .tap-left { left: 0; } .tap-right { right: 0; }
+
+  /* Desktop: horizontal inline carousel feel */
+  @media (min-width: 768px) {
+    #reel { max-width: 1100px; height: min(720px, 92vh); margin: 4vh auto;
+      border-radius: var(--radius); box-shadow: var(--shadow); }
+    body { display: flex; align-items: center; justify-content: center;
+      background: radial-gradient(1200px 600px at 50% 0%, #1a1a22 0%, #0b0b0d 60%); }
+    .tap-left, .tap-right { display: none; }
+    .slide { border-radius: var(--radius); overflow: hidden; }
+  }
+
+  @media (max-width: 767px) {
+    .controls { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+    .arrow { display: none; }
+    .replay-floating { bottom: 110px; }
+  }
+
+  .meta {
+    position: absolute; top: 16px; left: 20px; z-index: 10;
+    font-size: 12px; color: var(--muted); letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+
+<!--
+  SLIDES — replace this array with the generated slides.
+  Each slide supports:
+    { type: "title"|"image"|"svg"|"typographic", fgText, fgAccent?, bgImage?, svg? }
+-->
+<script id="slides-data" type="application/json">
+[
+  { "type": "title", "fgAccent": "Visualize Anything", "fgText": "Replace this with your generated slides." },
+  { "type": "typographic", "fgText": "One idea per slide. Visuals do the heavy lifting." }
+]
+</script>
+
+<div id="reel" aria-roledescription="carousel">
+  <div class="meta" id="meta">1 / 1</div>
+  <div class="tap-left"  aria-label="Previous"></div>
+  <div class="tap-right" aria-label="Next"></div>
+
+  <button class="replay-floating" id="replay" aria-label="Replay">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2"
+         stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/>
+         <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+    Replay
+  </button>
+
+  <div class="controls">
+    <button class="arrow" id="prev" aria-label="Previous slide">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+           stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="dots" id="dots"></div>
+    <button class="arrow" id="next" aria-label="Next slide">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+           stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
+</div>
+
+<script>
+(() => {
+  const slides = JSON.parse(document.getElementById('slides-data').textContent);
+  const reel = document.getElementById('reel');
+  const dotsEl = document.getElementById('dots');
+  const metaEl = document.getElementById('meta');
+  const prevBtn = document.getElementById('prev');
+  const nextBtn = document.getElementById('next');
+  const replayBtn = document.getElementById('replay');
+  const tapLeft = reel.querySelector('.tap-left');
+  const tapRight = reel.querySelector('.tap-right');
+
+  let idx = 0;
+
+  function escapeHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+  }
+
+  function render() {
+    reel.querySelectorAll('.slide').forEach(n => n.remove());
+    dotsEl.innerHTML = '';
+
+    slides.forEach((s, i) => {
+      const el = document.createElement('div');
+      el.className = 'slide' + (s.type === 'typographic' ? ' typographic' : '');
+      el.dataset.index = i;
+
+      if (s.bgImage && s.type !== 'svg') {
+        const bg = document.createElement('div');
+        bg.className = 'bg';
+        bg.style.backgroundImage = `url("${s.bgImage}")`;
+        el.appendChild(bg);
+      }
+
+      if (s.type === 'svg' && s.svg) {
+        const wrap = document.createElement('div');
+        wrap.className = 'svg-wrap';
+        wrap.innerHTML = s.svg;
+        el.appendChild(wrap);
+        if (s.fgText) {
+          const cap = document.createElement('div');
+          cap.className = 'caption-under-svg';
+          cap.textContent = s.fgText;
+          el.appendChild(cap);
+        }
+      } else {
+        const fg = document.createElement('div');
+        fg.className = 'fg';
+        let html = '';
+        if (s.fgAccent) html += `<div class="accent">${escapeHtml(s.fgAccent)}</div>`;
+        if (s.fgText)   html += `<div class="text">${escapeHtml(s.fgText)}</div>`;
+        fg.innerHTML = html;
+        el.appendChild(fg);
+      }
+
+      reel.appendChild(el);
+
+      const dot = document.createElement('div');
+      dot.className = 'dot';
+      dotsEl.appendChild(dot);
+    });
+
+    update();
+  }
+
+  function update() {
+    const slideEls = reel.querySelectorAll('.slide');
+    const dotEls = dotsEl.querySelectorAll('.dot');
+    slideEls.forEach((n, i) => n.classList.toggle('active', i === idx));
+    dotEls.forEach((n, i) => n.classList.toggle('active', i === idx));
+    metaEl.textContent = `${idx + 1} / ${slides.length}`;
+    prevBtn.disabled = idx === 0;
+    nextBtn.disabled = idx === slides.length - 1;
+    replayBtn.classList.toggle('show', idx === slides.length - 1 && slides.length > 1);
+
+    // Parallax nudge on active bg
+    const active = slideEls[idx];
+    if (active) {
+      const bg = active.querySelector('.bg');
+      if (bg) {
+        bg.style.transform = 'translate3d(0,0,0) scale(1.0)';
+      }
+    }
+  }
+
+  function go(delta) {
+    const n = idx + delta;
+    if (n < 0 || n >= slides.length) return;
+    idx = n;
+    update();
+  }
+
+  function reset() { idx = 0; update(); }
+
+  prevBtn.addEventListener('click', () => go(-1));
+  nextBtn.addEventListener('click', () => go(1));
+  replayBtn.addEventListener('click', reset);
+  tapLeft.addEventListener('click', () => go(-1));
+  tapRight.addEventListener('click', () => go(1));
+
+  window.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft')  go(-1);
+    if (e.key === 'ArrowRight') go(1);
+    if (e.key === 'r' || e.key === 'R') reset();
+  });
+
+  // Touch swipe (mobile)
+  let touchX = null;
+  reel.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, { passive: true });
+  reel.addEventListener('touchend', e => {
+    if (touchX == null) return;
+    const dx = e.changedTouches[0].clientX - touchX;
+    if (Math.abs(dx) > 40) go(dx < 0 ? 1 : -1);
+    touchX = null;
+  });
+
+  // Subtle parallax on pointer move (desktop)
+  reel.addEventListener('mousemove', e => {
+    const active = reel.querySelector('.slide.active .bg');
+    if (!active) return;
+    const r = reel.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width - 0.5;
+    const py = (e.clientY - r.top) / r.height - 0.5;
+    active.style.transform = `translate3d(${px * -18}px, ${py * -12}px, 0) scale(1.06)`;
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
