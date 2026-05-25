@@ -4,7 +4,7 @@
   "description": "Auto-generates a visual reel after Claude explains a concept, person, place, process, or analogy — for visual learners who'd rather see than read.",
   "author": {
     "name": "Pratik",
-    "url": "https://github.com/<your-handle>/visualize-anything"
+    "url": "https://github.com/ps-anchor/visualize-anything"
   },
   "license": "MIT",
   "keywords": ["visualization", "learning", "reel", "diagram", "visual-learner"],
